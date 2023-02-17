@@ -1,8 +1,6 @@
 # %% [markdown]
 # # Build my own deep learning functions
-# 
 # ## Purpose
-# 
 # Learn by practicing. Notations follow Andrew Ng's Coursera deep learning course.
 
 # %% [markdown]
@@ -145,7 +143,7 @@ def back_prop(X, Y, caches):
     m = Y.shape[1]
     L = len(caches) // 2
     caches['A0'] = X
-    
+
     # The last layer is a sigmoid layer
     grads['dZ' + str(L)] = 1/m * (caches['A' + str(L)] - Y)
     grads['dW' + str(L)] = np.dot(grads['dZ' + str(L)], caches['A' + str(L-1)].T) ## Lesson learned, use previous layer Activation output
@@ -175,13 +173,13 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
     model_match_percents = np.zeros((number_of_iterations))
 
     for i in range(number_of_iterations):
-        costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(train_set_x, train_set_y_orig, parameters)
+        costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(X, Y, parameters)
         # print('len(train_set_y_orig)=', len(train_set_y_orig))
         # print('train_set_y_orig.shape', train_set_y_orig.shape)
         if i % 100 == 0:
             print('Iteration {0} cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
         
-        grads = back_prop(train_set_x, train_set_y_orig, caches)
+        grads = back_prop(X, Y, caches)
 
         for l in range(1, len(layer_dims)):
             parameters['W'+str(l)] = parameters['W'+str(l)] - grads['dW'+str(l)] * learning_rate
@@ -192,41 +190,33 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
 
     return parameters, costs
 
+def main():
+    # load data and pre-processing
+    train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes = load_data()
+    # print('train_set_x_orig.shape=', train_set_x_orig.shape)
+    # plt.imshow(train_set_x_orig[7])
+    # plt.show()
+
+    train_set_x_flatten = train_set_x_orig.reshape(train_set_x_orig.shape[0], -1).T
+    test_set_x_flatten = test_set_x_orig.reshape(test_set_x_orig.shape[0], -1).T
+    # print('train_set_x_flatten.shape=', train_set_x_flatten.shape)
+    # print('test_set_x_flatten.shape=', test_set_x_flatten.shape)
+    # print(train_set_x_flatten)
+    # print(train_set_x_flatten.max())
+
+    train_set_x = train_set_x_flatten / 255.0
+    test_set_x = test_set_x_flatten / 255.0
+    layer_dims = [train_set_x.shape[0], 20, 7, 5, 1]
+    learning_rate = 0.005
+    model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 600, learning_rate)
+
+    # predict(model, test_set_x_orig, test_set_y_orig)
+
+if __name__ == "__main__":
+    main()
+
 # %% Temporary test code
 # for i in range(2, 0, -1):
 #     print('i=', i)
 # sys.exit()
-
-# %%
-# load data and pre-processing
-train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes = load_data()
-# print('train_set_x_orig.shape=', train_set_x_orig.shape)
-# plt.imshow(train_set_x_orig[7])
-# plt.show()
-
-train_set_x_flatten = train_set_x_orig.reshape(train_set_x_orig.shape[0], -1).T
-test_set_x_flatten = test_set_x_orig.reshape(test_set_x_orig.shape[0], -1).T
-# print('train_set_x_flatten.shape=', train_set_x_flatten.shape)
-# print('test_set_x_flatten.shape=', test_set_x_flatten.shape)
-# print(train_set_x_flatten)
-# print(train_set_x_flatten.max())
-
-train_set_x = train_set_x_flatten / 255.0
-test_set_x = test_set_x_flatten / 255.0
-layer_dims = [train_set_x.shape[0], 20, 7, 5, 1]
-learning_rate = 0.005
-model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 2000, learning_rate)
-
-# predict(model, test_set_x_orig, test_set_y_orig)
-
-# %%
-sys.exit()
-gate = np.random.rand(5, 1)
-test_relu_grad = np.ones_like(gate)
-test_relu_grad = test_relu_grad * (gate > 0.5)
-print('test_relu_grad=', test_relu_grad)
-print('gate=', gate)
-print('test_relu_grad=', test_relu_grad)
-
-
 
