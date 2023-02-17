@@ -18,6 +18,8 @@ import h5py
 import matplotlib.pyplot as plt
 import sys
 
+np.set_printoptions(edgeitems=4, linewidth=130)
+
 np.random.seed(1) 
 # TODO: with certain seeds, e.g. seed=1, the cost generates NAN
 
@@ -94,28 +96,23 @@ def forward_prop(X, Y, parameters, classify_threshold = 0.5):
     model_match_percent: The matched percentage between prediction and Y
     '''
     L = len(parameters) // 2
-    Xl = X
+    Al = X
     m = Y.shape[1]
     caches = {}
     for l in range(1, L):
-        # print('l=', l)
         W = parameters['W'+str(l)]
         b = parameters['b'+str(l)]
 
         assert(W.shape[0] == b.shape[0])
-        Z = np.dot(W, Xl) + b
-        A = relu(Z)
-        Xl = A
-        caches['Z'+str(l)] = Z
-        caches['A'+str(l)] = A
+        Zl = np.dot(W, Al) + b
+        Al = relu(Zl)
+        caches['Z'+str(l)] = Zl
+        caches['A'+str(l)] = Al
 
-    ZL = np.dot(parameters['W'+str(L)], Xl) + parameters['b'+str(L)]
+    ZL = np.dot(parameters['W'+str(L)], Al) + parameters['b'+str(L)]
     AL = 1 / (1 + np.exp(-ZL)) # sigmoid
     caches['Z'+str(L)] = ZL
     caches['A'+str(L)] = AL
-    # print('ZL=', ZL)
-    # print('AL=', AL)
-    # print('### debug ###: AL.max(), AL.min()=', AL.max(), AL.min())
 
     J = - np.dot(Y, np.log(AL).T) - np.dot(1 - Y, np.log(1 - AL).T)
     cost = np.squeeze(np.sum(J)) / m
