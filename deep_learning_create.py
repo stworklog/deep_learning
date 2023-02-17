@@ -150,12 +150,10 @@ def back_prop(X, Y, caches):
     grads['db' + str(L)] = np.sum(grads['dZ' + str(L)], axis=1, keepdims=True)
 
     for l in range(L-1, 0, -1):
-        # The remaining layer is a RELU layer
+        # The remaining layers are RELU layers
         grads['dZ' + str(l)] = np.ones_like(caches['Z' + str(l)]) * (caches['Z' + str(l)] > 0.0)
         grads['dW' + str(l)] = np.dot(grads['dZ' + str(l)], caches['A' + str(l-1)].T)
         grads['db' + str(l)] = np.sum(grads['dZ' + str(l)], axis=1, keepdims=True)
-
-    # assert(len(grads) == ())
 
     return grads
 
@@ -177,7 +175,7 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         # print('len(train_set_y_orig)=', len(train_set_y_orig))
         # print('train_set_y_orig.shape', train_set_y_orig.shape)
         if i % 100 == 0:
-            print('Iteration {0} cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
+            print('Iteration {0:5.0f}, cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
         
         grads = back_prop(X, Y, caches)
 
