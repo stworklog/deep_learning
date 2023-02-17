@@ -157,11 +157,28 @@ def back_prop(X, Y, caches):
 
     return grads
 
+# %% [markdown] 
+# Suspecting back-prop has mistakes, here to implement the gradient check
+# Design: perturb each elements in W and b by epsilon, and calculate the cost difference
+#         then take the ratio as the approx gradient
+def grad_check(X, Y, parameters, caches, grads, epsilon=1e-7):
+    m = Y.shape[1]
+    L = len(parameters) // 2
+    parameters_approx = parameters.copy()
+    grads_approx = {i:np.zeros_like(grads[i]) for i in grads} # la-la-la, dict comprehension
+    for k in parameters:
+        for idx, p in np.ndenumerate(parameters[k]):
+            parameters_approx[k][idx] = parameters[k][idx] + epsilon
+            cost_plus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters_approx)
+            parameters_approx[k][idx] = parameters[k][idx] - epsilon
+            cost_minus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters_approx)
+            parameters_approx[k][idx] = parameters[k][idx]
+            grads_approx['d'+k][idx] = (cost_plus - cost_minus) / (2 * epsilon)
+            print('grads_approx[k][idx]=', grads_approx['d'+k][idx], 'grads[k][idx]=', grads['d'+k][idx])
+
 # %% [markdown]
 # ### The overall model
 # Here is the overall learning model with hyper-parameters
-
-# %%
 def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01):
     # model initialization
     parameters = model_init(layer_dims)
@@ -174,10 +191,11 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(X, Y, parameters)
         # print('len(train_set_y_orig)=', len(train_set_y_orig))
         # print('train_set_y_orig.shape', train_set_y_orig.shape)
+        grads = back_prop(X, Y, caches)
+
         if i % 100 == 0:
             print('Iteration {0:5.0f}, cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
-        
-        grads = back_prop(X, Y, caches)
+            grad_check(X, Y, parameters, caches, grads)
 
         parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
         # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
