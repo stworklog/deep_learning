@@ -179,10 +179,8 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         
         grads = back_prop(X, Y, caches)
 
-        for l in range(1, len(layer_dims)):
-            parameters['W'+str(l)] = parameters['W'+str(l)] - grads['dW'+str(l)] * learning_rate
-            parameters['b'+str(l)] = parameters['b'+str(l)] - grads['db'+str(l)] * learning_rate
-            # print('Parameter updated: ', 'W'+str(l))
+        parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
+        # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
 
     plot_costs(costs, model_match_percents, learning_rate)
 
