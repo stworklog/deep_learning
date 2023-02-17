@@ -122,7 +122,7 @@ def forward_prop(X, Y, parameters, classify_threshold = 0.5):
     assert(cost.shape == ())
 
     predicted_result = np.ones_like(AL) * (AL > classify_threshold)
-    model_match_percent = 1 - np.sum(np.logical_xor(AL, Y)) / m
+    model_match_percent = 1 - np.sum(np.logical_xor(predicted_result, Y)) / m
 
     return cost, caches, predicted_result, model_match_percent
 
@@ -150,9 +150,9 @@ def back_prop(X, Y, caches):
     caches['A0'] = X
     
     # The last layer is a sigmoid layer
-    grads['dZ3'] = 1/m * (caches['A3'] - Y)
-    grads['dW3'] = np.dot(grads['dZ3'], caches['A2'].T) ## Lesson learned, use previous layer Activation output
-    grads['db3'] = np.sum(grads['dZ3'], axis=1, keepdims=True)
+    grads['dZ' + str(L)] = 1/m * (caches['A' + str(L)] - Y)
+    grads['dW' + str(L)] = np.dot(grads['dZ' + str(L)], caches['A' + str(L-1)].T) ## Lesson learned, use previous layer Activation output
+    grads['db' + str(L)] = np.sum(grads['dZ' + str(L)], axis=1, keepdims=True)
 
     for l in range(L-1, 0, -1):
         # The remaining layer is a RELU layer
@@ -174,15 +174,15 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
     parameters = model_init(layer_dims)
 
     # results
-    costs = np.zeros((number_of_iterations, 1))
-    model_match_percents = np.zeros((number_of_iterations, 1))
+    costs = np.zeros((number_of_iterations))
+    model_match_percents = np.zeros((number_of_iterations))
 
     for i in range(number_of_iterations):
         costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(train_set_x, train_set_y_orig, parameters)
         # print('len(train_set_y_orig)=', len(train_set_y_orig))
         # print('train_set_y_orig.shape', train_set_y_orig.shape)
         if i % 100 == 0:
-            print('Iteration {0} cost={1}'.format(i, costs[i]))
+            print('Iteration {0} cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
         
         grads = back_prop(train_set_x, train_set_y_orig, caches)
 
@@ -216,9 +216,9 @@ test_set_x_flatten = test_set_x_orig.reshape(test_set_x_orig.shape[0], -1).T
 
 train_set_x = train_set_x_flatten / 255.0
 test_set_x = test_set_x_flatten / 255.0
-layer_dims = [train_set_x.shape[0], 20, 5, 1]
+layer_dims = [train_set_x.shape[0], 20, 7, 5, 1]
 learning_rate = 0.005
-model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 6000, learning_rate)
+model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 2000, learning_rate)
 
 # predict(model, test_set_x_orig, test_set_y_orig)
 
