@@ -151,6 +151,7 @@ def back_prop(X, Y, caches):
 
     for l in range(L-1, 0, -1):
         # The remaining layers are RELU layers
+        dA
         grads['dZ' + str(l)] = np.ones_like(caches['Z' + str(l)]) * (caches['Z' + str(l)] > 0.0)
         grads['dW' + str(l)] = np.dot(grads['dZ' + str(l)], caches['A' + str(l-1)].T)
         grads['db' + str(l)] = np.sum(grads['dZ' + str(l)], axis=1, keepdims=True)
@@ -158,23 +159,23 @@ def back_prop(X, Y, caches):
     return grads
 
 # %% [markdown] 
-# Suspecting back-prop has mistakes, here to implement the gradient check
+# Suspecting back-prop has mistakes, here is to implement the gradient check
 # Design: perturb each elements in W and b by epsilon, and calculate the cost difference
 #         then take the ratio as the approx gradient
 def grad_check(X, Y, parameters, caches, grads, epsilon=1e-7):
     m = Y.shape[1]
-    L = len(parameters) // 2
-    parameters_approx = parameters.copy()
     grads_approx = {i:np.zeros_like(grads[i]) for i in grads} # la-la-la, dict comprehension
     for k in parameters:
+        if k != 'W3': # for debug specific gradients
+            continue
         for idx, p in np.ndenumerate(parameters[k]):
-            parameters_approx[k][idx] = parameters[k][idx] + epsilon
-            cost_plus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters_approx)
-            parameters_approx[k][idx] = parameters[k][idx] - epsilon
-            cost_minus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters_approx)
-            parameters_approx[k][idx] = parameters[k][idx]
+            parameters[k][idx] += epsilon
+            cost_plus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters)
+            parameters[k][idx] -= 2 * epsilon
+            cost_minus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters)
+            parameters[k][idx] += epsilon
             grads_approx['d'+k][idx] = (cost_plus - cost_minus) / (2 * epsilon)
-            print('grads_approx[k][idx]=', grads_approx['d'+k][idx], 'grads[k][idx]=', grads['d'+k][idx])
+            print('grads_approx[dk][idx]=', grads_approx['d'+k][idx], ', grads[dk][idx]=', grads['d'+k][idx])
 
 # %% [markdown]
 # ### The overall model
