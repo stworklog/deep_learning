@@ -151,7 +151,6 @@ def back_prop(X, Y, parameters, caches):
 
     for l in range(L-1, 0, -1):
         # The remaining layers are RELU layers
-        dA
         grads['dZ' + str(l)] = np.dot(parameters['W' + str(l+1)].T, grads['dZ' + str(l+1)]) * np.ones_like(caches['Z' + str(l)]) * (caches['Z' + str(l)] > 0.0)
         grads['dW' + str(l)] = np.dot(grads['dZ' + str(l)], caches['A' + str(l-1)].T)
         grads['db' + str(l)] = np.sum(grads['dZ' + str(l)], axis=1, keepdims=True)
@@ -162,11 +161,11 @@ def back_prop(X, Y, parameters, caches):
 # Suspecting back-prop has mistakes, here is to implement the gradient check
 # Design: perturb each elements in W and b by epsilon, and calculate the cost difference
 #         then take the ratio as the approx gradient
-def grad_check(X, Y, parameters, caches, grads, epsilon=1e-7):
+def grad_check(X, Y, parameters, grads, epsilon=1e-7):
     m = Y.shape[1]
     grads_approx = {i:np.zeros_like(grads[i]) for i in grads} # la-la-la, dict comprehension
     for k in parameters:
-        if k != 'W3': # for debug specific gradients
+        if k != 'b3': # for debug specific gradients
             continue
         for idx, p in np.ndenumerate(parameters[k]):
             parameters[k][idx] += epsilon
@@ -175,7 +174,12 @@ def grad_check(X, Y, parameters, caches, grads, epsilon=1e-7):
             cost_minus, tmp1, tmp2, tmp3 = forward_prop(X, Y, parameters)
             parameters[k][idx] += epsilon
             grads_approx['d'+k][idx] = (cost_plus - cost_minus) / (2 * epsilon)
-            print('grads_approx[dk][idx]=', grads_approx['d'+k][idx], ', grads[dk][idx]=', grads['d'+k][idx])
+            if np.abs(grads['d'+k][idx] - grads_approx['d'+k][idx]) >= epsilon:
+                print('grads_approx[d'+k+']['+str(idx)+']=', grads_approx['d'+k][idx], ', grads[d'+k+']['+str(idx)+']=', grads['d'+k][idx])
+                print('Gradient diff = ', grads['d'+k][idx] - grads_approx['d'+k][idx])
+                print('Wrong gradient!')
+            # assert(np.abs(grads['d'+k][idx] - grads_approx['d'+k][idx]) <= epsilon)
+            print('grads_approx[d'+k+']['+str(idx)+']=', grads_approx['d'+k][idx], ', grads[d'+k+']['+str(idx)+']=', grads['d'+k][idx])
 
 # %% [markdown]
 # ### The overall model
@@ -196,7 +200,7 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
 
         if i % 100 == 0:
             print('Iteration {0:5.0f}, cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
-            grad_check(X, Y, parameters, caches, grads)
+            grad_check(X, Y, parameters, grads)
 
         parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
         # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
