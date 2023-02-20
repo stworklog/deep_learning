@@ -131,7 +131,7 @@ def forward_prop(X, Y, parameters, classify_threshold = 0.5):
 # $dZ_1=\frac{d cost}{d Z1}$
 
 # %%
-def back_prop(X, Y, caches):
+def back_prop(X, Y, parameters, caches):
     '''
     X: Input data. (n0???, m). n0: feature #; m: # of examples
     Y: Labels. (1, m)
@@ -152,7 +152,7 @@ def back_prop(X, Y, caches):
     for l in range(L-1, 0, -1):
         # The remaining layers are RELU layers
         dA
-        grads['dZ' + str(l)] = np.ones_like(caches['Z' + str(l)]) * (caches['Z' + str(l)] > 0.0)
+        grads['dZ' + str(l)] = np.dot(parameters['W' + str(l+1)].T, grads['dZ' + str(l+1)]) * np.ones_like(caches['Z' + str(l)]) * (caches['Z' + str(l)] > 0.0)
         grads['dW' + str(l)] = np.dot(grads['dZ' + str(l)], caches['A' + str(l-1)].T)
         grads['db' + str(l)] = np.sum(grads['dZ' + str(l)], axis=1, keepdims=True)
 
@@ -192,7 +192,7 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(X, Y, parameters)
         # print('len(train_set_y_orig)=', len(train_set_y_orig))
         # print('train_set_y_orig.shape', train_set_y_orig.shape)
-        grads = back_prop(X, Y, caches)
+        grads = back_prop(X, Y, parameters, caches)
 
         if i % 100 == 0:
             print('Iteration {0:5.0f}, cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
