@@ -19,19 +19,10 @@ from datetime import datetime
 import pickle
 import signal
 
-global_stop_flag = False
-
 def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
     global global_stop_flag 
     global_stop_flag = True
-
-signal.signal(signal.SIGINT, signal_handler)
-
-np.set_printoptions(edgeitems=4, linewidth=130)
-
-np.random.seed(1) 
-# TODO: with certain seeds, e.g. seed=1, the cost generates NAN
 
 def plot_costs(costs, model_match_percents, learning_rate=0.01):
     x = np.arange(0, len(costs))
@@ -139,6 +130,9 @@ def forward_prop(X, Y, parameters, classify_threshold = 0.5):
     caches['Z'+str(L)] = ZL
     caches['A'+str(L)] = AL
 
+    for l in range(1, L+1):
+        assert(caches['Z'+str(L)].shape == caches['A'+str(L)].shape)
+
     J = - np.dot(Y, np.log(AL).T) - np.dot(1 - Y, np.log(1 - AL).T)
     cost = np.squeeze(np.sum(J)) / m
     assert(cost.shape == ())
@@ -182,6 +176,11 @@ def back_prop(X, Y, parameters, caches):
         grads['dW' + str(l)] = np.dot(grads['dZ' + str(l)], caches['A' + str(l-1)].T)
         grads['db' + str(l)] = np.sum(grads['dZ' + str(l)], axis=1, keepdims=True)
 
+    for l in range(L, 0, -1):
+        assert(caches['Z' + str(l)].shape == grads['dZ' + str(l)].shape)
+        assert(parameters['W' + str(l)].shape == grads['dW' + str(l)].shape)
+        assert(parameters['b' + str(l)].shape == grads['db' + str(l)].shape)
+
     return grads
 
 # %% [markdown] 
@@ -224,8 +223,6 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
 
     for i in range(number_of_iterations):
         costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(X, Y, parameters)
-        # print('len(train_set_y_orig)=', len(train_set_y_orig))
-        # print('train_set_y_orig.shape', train_set_y_orig.shape)
         grads = back_prop(X, Y, parameters, caches)
 
         if global_stop_flag: # If stop training earlier, then save the model
@@ -239,7 +236,8 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
             dt_string = datetime.now().strftime("%Y-%m-%d, %H:%M:%S,")
             print(dt_string, '{0:3.0f} min, Iteration {1:5.0f}, cost={2:.6f}, prediction accuracy={3:.4f}'.
                 format((datetime.now()-start_time).total_seconds()/60, i, costs[i], model_match_percents[i]))
-            # grad_check(X, Y, parameters, grads, light_check=True)
+        if i <= 2:
+            grad_check(X, Y, parameters, grads, light_check=True)
 
         parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
         # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
@@ -253,16 +251,9 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
 def main(train_validate_select):
     # load data and pre-processing
     train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes = load_data()
-    # print('train_set_x_orig.shape=', train_set_x_orig.shape)
-    # plt.imshow(train_set_x_orig[7])
-    # plt.show()
 
     train_set_x_flatten = train_set_x_orig.reshape(train_set_x_orig.shape[0], -1).T
     test_set_x_flatten = test_set_x_orig.reshape(test_set_x_orig.shape[0], -1).T
-    # print('train_set_x_flatten.shape=', train_set_x_flatten.shape)
-    # print('test_set_x_flatten.shape=', test_set_x_flatten.shape)
-    # print(train_set_x_flatten)
-    # print(train_set_x_flatten.max())
 
     train_set_x = train_set_x_flatten / 255.0
     test_set_x = test_set_x_flatten / 255.0
@@ -279,10 +270,9 @@ def main(train_validate_select):
         print('No matched options. Options are: Train and Validate')
 
 if __name__ == "__main__":
-    main('Validate')
-
-# %% Temporary test code
-# for i in range(2, 0, -1):
-#     print('i=', i)
-sys.exit()
-
+    global_stop_flag = False
+    signal.signal(signal.SIGINT, signal_handler)
+    np.set_printoptions(edgeitems=4, linewidth=130)
+    # TODO: with certain seeds, e.g. seed=1, the cost generates NAN
+    np.random.seed(1) 
+    main('Train')
