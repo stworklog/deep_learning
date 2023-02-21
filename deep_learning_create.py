@@ -17,6 +17,16 @@ import matplotlib.pyplot as plt
 import sys
 from datetime import datetime
 import pickle
+import signal
+
+global_stop_flag = False
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    global global_stop_flag 
+    global_stop_flag = True
+
+signal.signal(signal.SIGINT, signal_handler)
 
 np.set_printoptions(edgeitems=4, linewidth=130)
 
@@ -76,11 +86,15 @@ def relu(Z):
 def model_init(layer_dims):
     parameters = {}
     for i in range(1, len(layer_dims)):
-        parameters['W'+str(i)] = np.random.randn(layer_dims[i], layer_dims[i-1]) * 0.1 # the down-scaling is important
+        parameters['W'+str(i)] = np.random.randn(layer_dims[i], layer_dims[i-1]) * 0.05 # the down-scaling is important
         parameters['b'+str(i)] = np.zeros((layer_dims[i], 1))
         # print(parameters['W'+str(i)].shape, parameters['b'+str(i)].shape)
 
     return parameters
+
+def save_model(parameters):
+    model_name = datetime.now().strftime("trained_models/%Y%m%d_%Hh%Mm") + '_model.pickle'
+    pickle.dump(parameters, open(model_name, "wb"))
 
 # %%
 def forward_prop(X, Y, parameters, classify_threshold = 0.5):
@@ -188,6 +202,7 @@ def grad_check(X, Y, parameters, grads, epsilon=1e-7, light_check = True):
 # Here is the overall learning model with hyper-parameters
 def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01):
     # model initialization
+    global global_stop_flag
     parameters = model_init(layer_dims)
 
     # results
@@ -196,6 +211,11 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
 
     for i in range(number_of_iterations):
         costs[i], caches, predicted_result, model_match_percents[i] = forward_prop(X, Y, parameters)
+        
+        if global_stop_flag: # If stop training earlier, then save the model
+            save_model(parameters)
+            sys.exit(0)
+            
         # print('len(train_set_y_orig)=', len(train_set_y_orig))
         # print('train_set_y_orig.shape', train_set_y_orig.shape)
         grads = back_prop(X, Y, parameters, caches)
@@ -208,8 +228,7 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
         # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
 
-    model_name = datetime.now().strftime("trained_models/%Y%m%d_%Hh%Mm") + '_model.pickle'
-    pickle.dump(parameters, open(model_name, "wb"))
+    save_model(parameters)
     plot_costs(costs, model_match_percents, learning_rate)
 
     return parameters, costs
