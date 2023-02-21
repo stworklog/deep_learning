@@ -15,6 +15,8 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import sys
+from datetime import datetime
+import pickle
 
 np.set_printoptions(edgeitems=4, linewidth=130)
 
@@ -27,7 +29,7 @@ def plot_costs(costs, model_match_percents, learning_rate=0.01):
     ax2 = ax1.twinx()
     ax1.plot(x, costs, 'b*-')
     ax2.plot(x, model_match_percents, 'rx-')
-    ax1.set_xlabel('Iterations')
+    ax1.set_xlabel('Iterations (learning_rate={0})'.format(learning_rate))
     ax1.set_ylabel('Cost')
     ax2.set_ylabel('Match percentage (0 to 1)')
     ax1.yaxis.label.set_color('blue')
@@ -74,7 +76,7 @@ def relu(Z):
 def model_init(layer_dims):
     parameters = {}
     for i in range(1, len(layer_dims)):
-        parameters['W'+str(i)] = np.random.randn(layer_dims[i], layer_dims[i-1]) * 0.01 # the down-scaling is important
+        parameters['W'+str(i)] = np.random.randn(layer_dims[i], layer_dims[i-1]) * 0.1 # the down-scaling is important
         parameters['b'+str(i)] = np.zeros((layer_dims[i], 1))
         # print(parameters['W'+str(i)].shape, parameters['b'+str(i)].shape)
 
@@ -161,11 +163,12 @@ def back_prop(X, Y, parameters, caches):
 # Suspecting back-prop has mistakes, here is to implement the gradient check
 # Design: perturb each elements in W and b by epsilon, and calculate the cost difference
 #         then take the ratio as the approx gradient
-def grad_check(X, Y, parameters, grads, epsilon=1e-7):
+def grad_check(X, Y, parameters, grads, epsilon=1e-7, light_check = True):
     m = Y.shape[1]
     grads_approx = {i:np.zeros_like(grads[i]) for i in grads} # la-la-la, dict comprehension
     for k in parameters:
-        if k != 'b3': # for debug specific gradients
+        # print('Gradient check: ', k)
+        if (k == 'W1') and light_check: # skip W1, because it too large for run time check
             continue
         for idx, p in np.ndenumerate(parameters[k]):
             parameters[k][idx] += epsilon
@@ -178,8 +181,8 @@ def grad_check(X, Y, parameters, grads, epsilon=1e-7):
                 print('grads_approx[d'+k+']['+str(idx)+']=', grads_approx['d'+k][idx], ', grads[d'+k+']['+str(idx)+']=', grads['d'+k][idx])
                 print('Gradient diff = ', grads['d'+k][idx] - grads_approx['d'+k][idx])
                 print('Wrong gradient!')
-            # assert(np.abs(grads['d'+k][idx] - grads_approx['d'+k][idx]) <= epsilon)
-            print('grads_approx[d'+k+']['+str(idx)+']=', grads_approx['d'+k][idx], ', grads[d'+k+']['+str(idx)+']=', grads['d'+k][idx])
+            assert(np.abs(grads['d'+k][idx] - grads_approx['d'+k][idx]) <= epsilon * 100)
+            
 
 # %% [markdown]
 # ### The overall model
@@ -199,12 +202,15 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         grads = back_prop(X, Y, parameters, caches)
 
         if i % 100 == 0:
-            print('Iteration {0:5.0f}, cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
-            grad_check(X, Y, parameters, grads)
+            dt_string = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+            print(dt_string, ' Iteration {0:5.0f}, cost={1:.6f}, prediction accuracy={2:.4f}'.format(i, costs[i], model_match_percents[i]))
+            # grad_check(X, Y, parameters, grads, light_check=True)
 
         parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
         # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
 
+    model_name = datetime.now().strftime("trained_models/%Y%m%d_%Hh%Mm") + '_model.pickle'
+    pickle.dump(parameters, open(model_name, "wb"))
     plot_costs(costs, model_match_percents, learning_rate)
 
     return parameters, costs
@@ -226,8 +232,8 @@ def main():
     train_set_x = train_set_x_flatten / 255.0
     test_set_x = test_set_x_flatten / 255.0
     layer_dims = [train_set_x.shape[0], 20, 7, 5, 1]
-    learning_rate = 0.005
-    model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 600, learning_rate)
+    learning_rate = 0.0001
+    model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 600000, learning_rate)
 
     # predict(model, test_set_x_orig, test_set_y_orig)
 
