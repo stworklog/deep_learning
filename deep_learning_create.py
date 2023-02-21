@@ -183,7 +183,6 @@ def grad_check(X, Y, parameters, grads, epsilon=1e-7, light_check = True):
                 print('Wrong gradient!')
             assert(np.abs(grads['d'+k][idx] - grads_approx['d'+k][idx]) <= epsilon * 100)
             
-
 # %% [markdown]
 # ### The overall model
 # Here is the overall learning model with hyper-parameters
@@ -215,7 +214,7 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
 
     return parameters, costs
 
-def main():
+def main(train_validate_select):
     # load data and pre-processing
     train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes = load_data()
     # print('train_set_x_orig.shape=', train_set_x_orig.shape)
@@ -233,12 +232,18 @@ def main():
     test_set_x = test_set_x_flatten / 255.0
     layer_dims = [train_set_x.shape[0], 20, 7, 5, 1]
     learning_rate = 0.0001
-    model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 600000, learning_rate)
 
-    # predict(model, test_set_x_orig, test_set_y_orig)
+    if train_validate_select == 'Train':
+        model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 800000, learning_rate)
+    elif train_validate_select == 'Validate':
+        model = pickle.load(open('trained_models/20230220_23h40m_model.pickle', "rb"))
+        tmp1, tmp2, predicted_result, model_match_percent = forward_prop(test_set_x, test_set_y_orig, model)
+        print('Test set prediction accuracy {0:.3}'.format(model_match_percent))
+    else:
+        print('No matched options. Options are: Train and Validate')
 
 if __name__ == "__main__":
-    main()
+    main('Validates')
 
 # %% Temporary test code
 # for i in range(2, 0, -1):
