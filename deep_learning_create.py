@@ -234,19 +234,19 @@ def main(train_validate_select):
     learning_rate = 0.0001
 
     if train_validate_select == 'Train':
-        model, costs = train_model(train_set_x, train_set_y_orig, layer_dims, 800000, learning_rate)
+        model, tmp1 = train_model(train_set_x, train_set_y_orig, layer_dims, 800000, learning_rate)
     elif train_validate_select == 'Validate':
         model = pickle.load(open('trained_models/20230220_23h40m_model.pickle', "rb"))
-        tmp1, tmp2, predicted_result, model_match_percent = forward_prop(test_set_x, test_set_y_orig, model)
+        tmp1, tmp2, tmp3, model_match_percent = forward_prop(test_set_x, test_set_y_orig, model)
         print('Test set prediction accuracy {0:.3}'.format(model_match_percent))
     else:
         print('No matched options. Options are: Train and Validate')
 
 if __name__ == "__main__":
-    main('Validates')
+    main('Train')
 
 # %% Temporary test code
 # for i in range(2, 0, -1):
 #     print('i=', i)
-# sys.exit()
+sys.exit()
 
