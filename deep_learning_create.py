@@ -77,7 +77,7 @@ def relu(Z):
 def model_init(layer_dims):
     parameters = {}
     for l in range(1, len(layer_dims)):
-        parameters['W'+str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) * 0.05 # the down-scaling is important
+        parameters['W'+str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) / np.sqrt(layer_dims[l-1]) # the down-scaling is important
         parameters['b'+str(l)] = np.zeros((layer_dims[l], 1))
 
     return parameters
