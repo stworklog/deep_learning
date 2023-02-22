@@ -82,11 +82,13 @@ def model_init(layer_dims):
 
     return parameters
 
-def save_model(parameters, grads, learning_rate, costs, caches, parameters_ini, total_iteration, train_time_sec):
+def save_model(parameters, grads, layer_dims, learning_rate, costs, caches, 
+        parameters_ini, total_iteration, train_time_sec):
     model_name = datetime.now().strftime("trained_models/%Y%m%d_%Hh%Mm") + '_model.pickle'
     model = {}
     model['parameters'] = parameters
     model['grads'] = grads
+    model['layer_dims'] = layer_dims
     model['learning_rate'] = learning_rate
     model['costs'] = costs
     model['caches'] = caches
@@ -227,21 +229,21 @@ def train_model(X, Y, layer_dims, number_of_iterations = 5, learning_rate = 0.01
         if global_stop_flag: # If stop training earlier, then save the model
             print(dt_string, '{0:3.0f} min, Iteration {1:5.0f}, cost={2:.6f}, prediction accuracy={3:.4f}'.
                 format((datetime.now()-start_time).total_seconds()/60, i, costs[i], model_match_percents[i]))
-            save_model(parameters, grads, learning_rate, costs, caches, parameters_ini, i+1, 
+            save_model(parameters, grads, layer_dims, learning_rate, costs, caches, parameters_ini, i+1, 
                 (datetime.now()-start_time).total_seconds())
             sys.exit(0)
 
-        if i % 100 == 0:
+        if i % 1000 == 0:
             dt_string = datetime.now().strftime("%Y-%m-%d, %H:%M:%S,")
             print(dt_string, '{0:3.0f} min, Iteration {1:5.0f}, cost={2:.6f}, prediction accuracy={3:.4f}'.
                 format((datetime.now()-start_time).total_seconds()/60, i, costs[i], model_match_percents[i]))
-        if i <= 2:
-            grad_check(X, Y, parameters, grads, light_check=True)
+        # if i <= 2:
+        #     grad_check(X, Y, parameters, grads, light_check=True)
 
         parameters = {k:parameters[k] - grads['d'+k] * learning_rate for k in parameters}
         # np.testing.assert_array_equal(parameters_comp['W1'], parameters['W1'])
 
-    save_model(parameters, grads, learning_rate, costs, caches, parameters_ini, i+1, 
+    save_model(parameters, grads, layer_dims, learning_rate, costs, caches, parameters_ini, i+1, 
         (datetime.now()-start_time).total_seconds())
     plot_costs(costs, model_match_percents, learning_rate)
 
@@ -256,11 +258,13 @@ def main(train_validate_select):
 
     train_set_x = train_set_x_flatten / 255.0
     test_set_x = test_set_x_flatten / 255.0
-    layer_dims = [train_set_x.shape[0], 20, 7, 5, 1]
+    layer_dims = [train_set_x.shape[0], 30, 15, 7, 5, 1]
     learning_rate = 0.0001
 
     if train_validate_select == 'Train':
-        tmp1, tmp2 = train_model(train_set_x, train_set_y_orig, layer_dims, 8000, learning_rate)
+        parameters, tmp2 = train_model(train_set_x, train_set_y_orig, layer_dims, 1000000, learning_rate)
+        tmp1, tmp2, tmp3, model_match_percent = forward_prop(test_set_x, test_set_y_orig, parameters)
+        print('Test set prediction accuracy {0:.3}'.format(model_match_percent))
     elif train_validate_select == 'Validate':
         model = pickle.load(open('trained_models/20230221_14h18m_model.pickle', "rb"))
         tmp1, tmp2, tmp3, model_match_percent = forward_prop(test_set_x, test_set_y_orig, model['parameters'])
@@ -273,5 +277,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     np.set_printoptions(edgeitems=4, linewidth=130)
     # TODO: with certain seeds, e.g. seed=1, the cost generates NAN
-    np.random.seed(1) 
+    np.random.seed(1)
     main('Train')
+
+    # TODO: Cost increasing, indicating a too large learning rate
