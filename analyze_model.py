@@ -1,6 +1,34 @@
 # Analyze the model parameters from different trainings
 import numpy as np
 import pickle
+import seaborn
+import matplotlib.pyplot as plt
+
+# create interactive data visualization using bokeh to visualize norms of weights and biases
+def plot_norms(norms, norm_type='fro'):
+    fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+    axs[0, 0].set_title('Norm of model_1 ini')
+    axs[0, 0].bar(norms[norm_type]['m1_ini'].keys(), norms[norm_type]['m1_ini'].values())
+    axs[0, 1].set_title('Norm of model_2 ini')
+    axs[0, 1].bar(norms[norm_type]['m2_ini'].keys(), norms[norm_type]['m2_ini'].values())
+    axs[1, 0].set_title('Norm of trained model_1')
+    axs[1, 0].bar(norms[norm_type]['m1'].keys(), norms[norm_type]['m1'].values())
+    axs[1, 1].set_title('Norm of trained model_2')
+    axs[1, 1].bar(norms[norm_type]['m2'].keys(), norms[norm_type]['m2'].values())
+    plt.show()
+
+def plot_norms_diff(norms, norm_type='fro'):
+    fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+    axs[0, 0].set_title('Norm of m1_ini_diff_m2_ini')
+    axs[0, 0].bar(norms[norm_type]['m1_ini_diff_m2_ini'].keys(), norms[norm_type]['m1_ini_diff_m2_ini'].values())
+    axs[0, 1].set_title('Norm of m1_diff_m1_ini')
+    axs[0, 1].bar(norms[norm_type]['m1_diff_m1_ini'].keys(), norms[norm_type]['m1_diff_m1_ini'].values())
+    axs[1, 0].set_title('Norm of m2_diff_m2_ini')
+    axs[1, 0].bar(norms[norm_type]['m2_diff_m2_ini'].keys(), norms[norm_type]['m2_diff_m2_ini'].values())
+    axs[1, 1].set_title('Norm of m1_diff_m2')
+    axs[1, 1].bar(norms[norm_type]['m1_diff_m2'].keys(), norms[norm_type]['m1_diff_m2'].values())
+    plt.show()
+
 
 def calc_norms(model_1, model_2):
     p = 'parameters'
@@ -38,6 +66,8 @@ def main():
     #         'with different structures may not make sense')
 
     norms = calc_norms(model_1, model_2)
+    plot_norms(norms, norm_type='fro')
+    plot_norms_diff(norms, norm_type='fro')
 
 if __name__ == "__main__":
     np.set_printoptions(edgeitems=4, linewidth=130)
